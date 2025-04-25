@@ -4,6 +4,7 @@ import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import { ThemeProvider } from "@/components/theme-provider"
 import Sidebar from "@/components/sidebar"
+import MobileHeader from "@/components/mobile-header"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -22,9 +23,12 @@ export default function RootLayout({
     <html lang="zh-CN">
       <body className={inter.className}>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
-          <div className="flex min-h-screen">
+          <div className="flex flex-col md:flex-row min-h-screen">
             <Sidebar />
-            <main className="flex-1 bg-gradient-to-b from-pink-50 to-orange-50">{children}</main>
+            <div className="flex-1 flex flex-col">
+              <MobileHeader />
+              <main className="flex-1 bg-gradient-to-b from-pink-50 to-orange-50">{children}</main>
+            </div>
           </div>
         </ThemeProvider>
       </body>

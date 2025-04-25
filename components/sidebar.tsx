@@ -14,9 +14,9 @@ export default function Sidebar() {
   ]
 
   return (
-    <div className="w-64 bg-white border-r border-gray-200 shadow-sm">
+    <div className="hidden md:block w-64 bg-white border-r border-gray-200 shadow-sm">
       <div className="p-4">
-        <h1 className="text-2xl font-bold bg-gradient-to-r from-orange-500 to-pink-500 text-transparent bg-clip-text">
+        <h1 className="text-xl font-bold bg-gradient-to-r from-orange-500 to-pink-500 text-transparent bg-clip-text">
           pilibebe的广州美食探索之旅
         </h1>
       </div>
