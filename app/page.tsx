@@ -1,101 +1,119 @@
 "use client"
 
-import { useState } from "react"
-import { motion } from "framer-motion"
-import FoodCard from "@/components/food-card"
-import Header from "@/components/header"
-import type { FoodItem } from "@/types"
-import type { MealData } from "@/components/meal-form"
+import { useEffect, useState, useRef } from "react"
+import axios from "axios"
+import { motion, AnimatePresence } from "framer-motion"
+import ChatMessage from "@/components/chat-message"
+import ClusteringButton from "@/components/clustering-button"
+import ViewCardsButton from "@/components/view-cards-button"
+import UpdateMessagesButton from "@/components/update-messages-button"
+import { useCache } from "@/contexts/cache-context"
 
-export default function FoodPage() {
-  // 初始食物数据
-  const [foods, setFoods] = useState<FoodItem[]>([
-    {
-      id: "1",
-      name: "鸡",
-      category: "肉类",
-      eaten: false,
-      image: "/happy-hen-meal.png",
-    },
-    {
-      id: "2",
-      name: "早茶",
-      category: "粤式",
-      eaten: false,
-      image: "/happy-dim-sum-friends.png",
-    },
-    {
-      id: "3",
-      name: "煲仔饭",
-      category: "粤式",
-      eaten: false,
-      image: "/happy-clay-pot.png",
-    },
-    {
-      id: "4",
-      name: "意大利菜",
-      category: "西餐",
-      eaten: false,
-      image: "/happy-italian-feast.png",
-    },
-    {
-      id: "5",
-      name: "牛肉火锅",
-      category: "火锅",
-      eaten: false,
-      image: "/happy-hotpot.png",
-    },
-    {
-      id: "6",
-      name: "意面",
-      category: "西餐",
-      eaten: false,
-      image: "/happy-pasta-friends.png",
-    },
-    {
-      id: "7",
-      name: "广州煎面",
-      category: "粤式",
-      eaten: false,
-      image: "/happy-noodle-bowl.png",
-    },
-  ])
+export default function ChatPage() {
+  const { messages, setMessages, isCacheStale, invalidateMessages } = useCache()
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
-  // 切换食物的吃了/没吃状态
-  const toggleEaten = (id: string, mealData?: MealData) => {
-    setFoods(
-      foods.map((food) => {
-        if (food.id === id) {
-          // 如果已经吃过并且没有提供新的 mealData，则切换回未吃状态
-          if (food.eaten && !mealData) {
-            return { ...food, eaten: false, mealData: undefined }
-          }
-          // 否则，设置为已吃状态并更新 mealData
-          return { ...food, eaten: true, mealData }
-        }
-        return food
-      }),
-    )
+  const fetchMessages = async (force = false) => {
+    // Skip fetching if cache is fresh and not forced
+    if (!force && !isCacheStale("messages")) {
+      setLoading(false)
+      return
+    }
+
+    try {
+      setLoading(true)
+      const response = await axios.get("http://43.139.19.144:8000/get_Messages")
+      setMessages(response.data)
+      setError(null)
+    } catch (err) {
+      console.error("Error fetching messages:", err)
+      setError("Failed to load messages. Please try again.")
+    } finally {
+      setLoading(false)
+    }
   }
 
-  // 计算已吃和未吃的数量
-  const eatenCount = foods.filter((food) => food.eaten).length
-  const notEatenCount = foods.length - eatenCount
+  useEffect(() => {
+    fetchMessages()
+
+    // Poll for new messages every 30 seconds
+    pollingIntervalRef.current = setInterval(() => {
+      fetchMessages(true) // Force refresh on polling
+    }, 30000)
+
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current)
+      }
+    }
+  }, [])
+
+  useEffect(() => {
+    // Scroll to bottom when messages change
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  }, [messages])
+
+  // Handle refresh triggered by update button
+  const handleRefresh = () => {
+    invalidateMessages()
+    fetchMessages(true)
+  }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <Header eatenCount={eatenCount} notEatenCount={notEatenCount} />
+    <div className="flex flex-col h-screen w-screen fixed inset-0 bg-[#F2F2F7] overflow-hidden">
+      {/* iOS-style header - fixed position */}
+      <div className="bg-white py-3 px-4 border-b border-gray-200 flex items-center justify-between z-10">
+        <div className="flex items-center">
+          <button className="text-[#007AFF] text-sm font-medium">Back</button>
+        </div>
+        <div className="text-center">
+          <h1 className="font-semibold text-lg">Group Chat</h1>
+          <p className="text-xs text-gray-500">5 participants</p>
+        </div>
+        <div className="flex items-center space-x-3">
+          <UpdateMessagesButton onUpdate={handleRefresh} />
+          <ClusteringButton onClusteringComplete={handleRefresh} />
+          <ViewCardsButton />
+          <button className="text-[#007AFF] text-sm font-medium">Info</button>
+        </div>
+      </div>
 
-      <motion.div
-        className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-6 mt-8"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5 }}
-      >
-        {foods.map((food) => (
-          <FoodCard key={food.id} food={food} onToggle={toggleEaten} />
-        ))}
-      </motion.div>
+      {/* Chat messages - scrollable container */}
+      <div className="flex-1 overflow-y-auto overscroll-none -webkit-overflow-scrolling-touch p-4 space-y-4">
+        {loading && messages.length === 0 ? (
+          <div className="flex justify-center items-center h-full">
+            <div className="w-8 h-8 rounded-full border-2 border-[#007AFF] border-t-transparent animate-spin"></div>
+          </div>
+        ) : error ? (
+          <div className="bg-red-50 p-4 rounded-xl text-center text-red-500">
+            {error}
+            <button onClick={() => fetchMessages(true)} className="block mx-auto mt-2 text-[#007AFF] font-medium">
+              Try Again
+            </button>
+          </div>
+        ) : (
+          <AnimatePresence>
+            {messages.map((message, index) => (
+              <motion.div
+                key={message.message_id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{
+                  duration: 0.3,
+                  delay: index * 0.05,
+                  ease: [0.25, 0.1, 0.25, 1.0], // iOS-like easing
+                }}
+              >
+                <ChatMessage message={message} isCurrentUser={message.sender_id === "current-user"} />
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        )}
+        <div ref={messagesEndRef} />
+      </div>
     </div>
   )
 }

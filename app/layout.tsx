@@ -1,16 +1,15 @@
 import type React from "react"
-import "./globals.css"
-import type { Metadata } from "next"
+import "@/app/globals.css"
 import { Inter } from "next/font/google"
 import { ThemeProvider } from "@/components/theme-provider"
-import Sidebar from "@/components/sidebar"
-import MobileHeader from "@/components/mobile-header"
+import { CacheProvider } from "@/contexts/cache-context"
 
 const inter = Inter({ subsets: ["latin"] })
 
-export const metadata: Metadata = {
-  title: "pilibebe的广州美食探索之旅",
-  description: "记录pilibebe的广州美食冒险！",
+export const metadata = {
+  title: "iOS Style Chat",
+  description: "A smooth iOS-style chat interface",
+  viewport: "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover",
     generator: 'v0.dev'
 }
 
@@ -20,16 +19,10 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="zh-CN">
-      <body className={inter.className}>
+    <html lang="en">
+      <body className={`${inter.className} overflow-hidden`}>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
-          <div className="flex flex-col md:flex-row min-h-screen">
-            <Sidebar />
-            <div className="flex-1 flex flex-col">
-              <MobileHeader />
-              <main className="flex-1 bg-gradient-to-b from-pink-50 to-orange-50">{children}</main>
-            </div>
-          </div>
+          <CacheProvider>{children}</CacheProvider>
         </ThemeProvider>
       </body>
     </html>
