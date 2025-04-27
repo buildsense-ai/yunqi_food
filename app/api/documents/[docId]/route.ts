@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { addAuthHeader } from "@/utils/api-utils"
 
 export async function DELETE(request: Request, { params }: { params: { docId: string } }) {
   try {
@@ -6,9 +7,9 @@ export async function DELETE(request: Request, { params }: { params: { docId: st
 
     const response = await fetch(`http://43.139.19.144:8000/delete_doc/${docId}`, {
       method: "DELETE",
-      headers: {
+      headers: addAuthHeader({
         "Content-Type": "application/json",
-      },
+      }),
     })
 
     if (!response.ok) {

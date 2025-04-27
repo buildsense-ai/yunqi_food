@@ -1,10 +1,10 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import axios from "axios"
 import { FileText, ExternalLink, Trash2 } from "lucide-react"
 import { useDocuments } from "@/contexts/document-context"
 import { useCache } from "@/contexts/cache-context"
+import axiosClient from "@/utils/axios-client"
 
 interface AssociatedDocumentsProps {
   eventId: number
@@ -31,7 +31,7 @@ export default function AssociatedDocuments({ eventId }: AssociatedDocumentsProp
 
       try {
         setLoading(true)
-        const response = await axios.get("/api/documents")
+        const response = await axiosClient.get("/api/documents")
         setDocuments(response.data)
         setError(null)
       } catch (err) {
@@ -55,7 +55,7 @@ export default function AssociatedDocuments({ eventId }: AssociatedDocumentsProp
   const handleDeleteDocument = async (docId: number) => {
     try {
       setDeletingDocId(docId)
-      await axios.delete(`/api/documents/${docId}`)
+      await axiosClient.delete(`/api/documents/${docId}`)
 
       // Update local state to remove the deleted document
       setDocuments(documents.filter((doc) => doc.id !== docId))

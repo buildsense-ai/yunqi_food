@@ -5,11 +5,13 @@ import type React from "react"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
-import axios from "axios"
 import { LockIcon, UserIcon, EyeIcon, EyeOffIcon } from "lucide-react"
+import { useAuth } from "@/contexts/auth-context"
+import axiosClient from "@/utils/axios-client"
 
 export default function LoginPage() {
   const router = useRouter()
+  const { login } = useAuth()
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
@@ -29,14 +31,14 @@ export default function LoginPage() {
       setIsLoading(true)
       setError(null)
 
-      const response = await axios.post("http://43.139.19.144:8000/token", {
+      // 这里不使用axiosClient，因为登录时还没有token
+      const response = await axiosClient.post("http://43.139.19.144:8000/token", {
         username,
         password,
       })
 
-      // 保存token到localStorage
-      localStorage.setItem("access_token", response.data.access_token)
-      localStorage.setItem("token_type", response.data.token_type)
+      // 使用AuthContext的login方法
+      login(response.data.access_token, response.data.token_type)
 
       // 显示登录成功动画
       setLoginSuccess(true)
